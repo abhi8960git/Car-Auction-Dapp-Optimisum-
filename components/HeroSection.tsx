@@ -4,13 +4,45 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { ethers } from "ethers";
 import Web3Modal from 'web3modal';
-import { shortnetAddress } from '@/services/Services';
+import { auctionContract, shortnetAddress } from '@/services/Services';
 import DataTable from './DataTable';
+import { PropagateLoader } from 'react-spinners';
+import toast, { Toaster } from 'react-hot-toast';
 const HeroSection = () => {
-
+  let [loading, setLoading] = useState(false);
   const [address, setAddress] = useState('');
   const [balance, setBalance] = useState('');
   const [openBidSection, setOpenBidSection] = useState(false);
+
+  // create auction state start
+  const [minBid, setMinBid] = useState('');
+  const [description, setDescription] = useState('');
+
+  console.log(minBid, description);
+
+  const createAuction = async () => {
+   try {
+    setLoading(true);
+    const contract = await auctionContract();
+    const transaction = await contract?.createAuction(description, minBid);
+    await transaction.wait();
+    setLoading(false);
+    toast.success("Auction Created Successfully :)");
+   } catch (error) {
+    console.log(error)
+    toast.error("Transactin Failed! :(")
+   }
+  }
+
+
+  const handleMinBidChange = (e: any) => {
+    setMinBid(e.target.value);
+  };
+
+  const handleDescriptionChange = (e: any) => {
+    setDescription(e.target.value);
+  };
+
 
   const checkIfWalletConnected = async () => {
     try {
@@ -115,25 +147,36 @@ const HeroSection = () => {
                   {/* <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-gray-800 via-transparent to-transparent opacity-50"></div> */}
                   <div className='mb-5 flex flex-col items-center justify-center'>
                     <div>
-                      <label htmlFor="text" className="mb-2  inline-block text-sm text-gray-800 sm:text-base">Minimum Bid *</label>
+                      <p className="mb-2  inline-block text-sm text-gray-800 sm:text-base">Minimum Bid *</p>
                       <input
-                        name="email"
+                        value={minBid}
+                        onChange={handleMinBidChange}
+                        type='number'
                         className="w-full  rounded border border-gray-300 bg-gray-200 px-6 py-2 text-gray-800 outline-none ring-indigo-300 transition duration-100 focus:ring"
                       />
                     </div>
 
                     <div className="mt-2">
-                      <label htmlFor="message" className="mb-2 inline-block text-sm text-gray-800 sm:text-base">
+                      <p className="mb-2 inline-block text-sm text-gray-800 sm:text-base">
                         Car Description *
-                      </label>
+                      </p>
                       <textarea
                         name="message"
+                        value={description}
+                        onChange={handleDescriptionChange}
                         className="h-20 w-full rounded border border-gray-300 bg-gray-200 px-3 py-2 text-gray-800 outline-none ring-indigo-300 transition duration-100 focus:ring"
                       ></textarea>
-
-                      <button className=" w-full mt-5 flex items-center justify-center gap-2 rounded-lg bg-blue-500 px-8 py-3 text-center text-sm font-semibold text-white outline-none ring-blue-300 transition duration-100 hover:bg-blue-600 focus-visible:ring active:bg-blue-700 md:text-base">
-                        Create Auction
-                      </button>
+                      {
+                        loading ? (
+                          <div className=' w-full mt-5 flex items-center justify-center gap-2 rounded-lg bg-blue-500 px-8 py-4 pb-7 text-center text-sm font-semibold text-white outline-none ring-blue-300 transition duration-100 hover:bg-blue-600 focus-visible:ring active:bg-blue-700 md:text-base'>
+                            <PropagateLoader color='#ffffff' />
+                          </div>
+                        ) : (
+                          <button onClick={createAuction} className=" w-full mt-5 flex items-center justify-center gap-2 rounded-lg bg-blue-500 px-8 py-3 text-center text-sm font-semibold text-white outline-none ring-blue-300 transition duration-100 hover:bg-blue-600 focus-visible:ring active:bg-blue-700 md:text-base">
+                            create Auction
+                          </button>
+                        )
+                      }
                     </div>
                   </div>
 
@@ -177,8 +220,12 @@ const HeroSection = () => {
           }
           {/* <!-- text end --> */}
 
-          <DataTable/>
+          {
+            openBidSection && <DataTable />
+          }
         </section>
+        <Toaster />
+
       </div>
     </div>
   );

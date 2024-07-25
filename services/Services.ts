@@ -69,10 +69,13 @@ export const auctionContract = async () => {
         const signer = provider.getSigner();
 
         const contract = fetchContract(address.auction, auctionAbi, signer);
-
+        return contract;
     } catch (error) {
         console.log(error);
     }
 }
+
+
+
 
 
