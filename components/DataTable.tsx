@@ -1,4 +1,5 @@
-import React from 'react'
+"use client"
+import React, { useEffect, useState } from 'react'
 import {
   Table,
   TableBody,
@@ -9,6 +10,12 @@ import {
   TableRow,
   TableFooter
 } from "@/components/ui/table"
+import { ethers } from "ethers";
+import Web3Modal from 'web3modal';
+import { auctionContract } from '@/services/Services';
+import toast, { Toaster } from 'react-hot-toast';
+
+// @ts-nocheck
 
 const invoices = [
   {
@@ -58,28 +65,65 @@ const invoices = [
 type Props = {}
 
 const DataTable = (props: Props) => {
+  const [data, setData] = useState([]);
+  // console.log("this is data", data[0].carDetails);
+
+  const getAllAuctionData = async () => {
+    try {
+
+      const contract = await auctionContract();
+      const transaction = await contract?.fetchAllAuctions();
+      // await transaction.wait();
+      // console.log(transaction);
+      setData(transaction);
+      console.log("all Auctions", transaction);
+
+    } catch (error) {
+      console.log(error)
+      toast.error("Transactin Failed! :(")
+    }
+  }
+
+
+  useEffect(() => {
+    getAllAuctionData();
+  }, []);
+
+  const endTime = (timestamp:any)=>new Date(parseInt(timestamp) * 1000);
+
   return (
-    <Table className='bg-white mt-6 rounded-lg shadow-lg'>
-    <TableHeader>
-      <TableRow>
-        <TableHead className="w-[100px]">Invoice</TableHead>
-        <TableHead>Status</TableHead>
-        <TableHead>Method</TableHead>
-        <TableHead className="text-right">Amount</TableHead>
-      </TableRow>
-    </TableHeader>
-    <TableBody>
-      {invoices.map((invoice) => (
-        <TableRow key={invoice.invoice}>
-          <TableCell className="font-medium">{invoice.invoice}</TableCell>
-          <TableCell>{invoice.paymentStatus}</TableCell>
-          <TableCell>{invoice.paymentMethod}</TableCell>
-          <TableCell className="text-right">{invoice.totalAmount}</TableCell>
-        </TableRow>
-      ))}
-    </TableBody>
-  
-  </Table>
+    <>
+      <Table className='bg-white mt-6 rounded-lg shadow-lg'>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="">Car Details</TableHead>
+            <TableHead>Car ID</TableHead>
+            <TableHead>End Timestamp</TableHead>
+            <TableHead>Finalized</TableHead>
+            <TableHead>Highest Bid</TableHead>
+            <TableHead>Highest Bider</TableHead>
+            <TableHead>Minimum Bid</TableHead>
+            <TableHead className="text-right">Seller</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {data.map((data) => (
+            <TableRow key={data[1]}>
+              <TableCell >{data.carDetails}</TableCell>
+              <TableCell >{Number(data.carId)}</TableCell>
+              <TableCell >{Number(data.endTime)}</TableCell>
+              <TableCell >{(data.finalized).toString()}</TableCell>
+              <TableCell >{Number(data.highestBid)}</TableCell>
+              <TableCell >{data.highestBidder}</TableCell>
+              <TableCell >{Number(data.minBid)}</TableCell>
+              <TableCell >{data.seller}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+
+      </Table>
+      <Toaster />
+    </>
   )
 }
 

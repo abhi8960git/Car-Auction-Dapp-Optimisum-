@@ -52,7 +52,7 @@ export const erc20Contract = async () => {
         const signer = provider.getSigner();
 
         const contract = fetchContract(address.erc20, erc20Abi, signer);
-
+        return contract;
     } catch (error) {
         console.log(error);
     }

@@ -1,40 +1,128 @@
 "use client"
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ethers } from "ethers";
 import Web3Modal from 'web3modal';
-import { auctionContract, shortnetAddress } from '@/services/Services';
+import { auctionContract, erc20Contract, shortnetAddress } from '@/services/Services';
 import DataTable from './DataTable';
 import { PropagateLoader } from 'react-spinners';
 import toast, { Toaster } from 'react-hot-toast';
+import addressData from "../utils/address.json"
 const HeroSection = () => {
   let [loading, setLoading] = useState(false);
+  let [aloading, setaLoading] = useState(false);
+  let [bloading, setbLoading] = useState(false);
   const [address, setAddress] = useState('');
   const [balance, setBalance] = useState('');
+
   const [openBidSection, setOpenBidSection] = useState(false);
 
   // create auction state start
   const [minBid, setMinBid] = useState('');
   const [description, setDescription] = useState('');
+  const [placeBidAmount, setPlaceBidAmount] = useState('');
+  const [bidApproved, setBidApporved] = useState(false);
+  const [auctionCounter, setAucitonCounter] = useState('');
 
-  console.log(minBid, description);
+  console.log(minBid, description, address, auctionCounter);
 
+  // hooks 
+
+  useEffect(() => {
+    checkIfWalletConnected()
+
+    getMTKBalance()
+
+    AuctionCounter()
+  }, [])
+
+
+  // write function Start
   const createAuction = async () => {
-   try {
-    setLoading(true);
-    const contract = await auctionContract();
-    const transaction = await contract?.createAuction(description, minBid);
-    await transaction.wait();
-    setLoading(false);
-    toast.success("Auction Created Successfully :)");
-   } catch (error) {
-    console.log(error)
-    toast.error("Transactin Failed! :(")
-   }
+    try {
+      setLoading(true);
+      const contract = await auctionContract();
+      const transaction = await contract?.createAuction(description, minBid);
+      await transaction.wait();
+      setLoading(false);
+      toast.success("Auction Created Successfully :)");
+    } catch (error) {
+      console.log(error)
+      toast.error("Transactin Failed! :(")
+    }
   }
 
+  const approveBid = async () => {
+    try {
+      setaLoading(true);
+      const contract = await erc20Contract();
+      const transaction = await contract?.approve(addressData.auction, placeBidAmount);
+      await transaction.wait();
+      setaLoading(false);
+      setBidApporved(true);
+      toast.success("Bid Approved Successfully :)");
+    } catch (error) {
+      console.log(error)
+      toast.error("Transactin Failed! :(")
+    }
+  }
 
+  const placeBid = async () => {
+    try {
+      setbLoading(true);
+      const contract = await auctionContract();
+      const transaction = await contract?.placeBid(auctionCounter, placeBidAmount);
+      await transaction.wait();
+      setbLoading(false);
+      setBidApporved(true);
+      toast.success("Bid Placed Successfully :)");
+    } catch (error) {
+      console.log(error)
+      toast.error("Transactin Failed! :(")
+    }
+  }
+  // write function end 
+
+  // Read functions Start 
+  const getMTKBalance = async () => {
+    try {
+      if (!window.ethereum) return alert("No Account Found");
+      const accounts = await window.ethereum.request({
+        method: "eth_accounts",
+      })
+
+      const contract = await erc20Contract();
+      const transaction = await contract?.balanceOf(accounts[0]);
+      // await transaction.wait();
+      // console.log(transaction);
+      setBalance(Number(transaction).toString())
+
+    } catch (error) {
+      console.log(error)
+      toast.error("Transactin Failed! :(")
+    }
+  }
+
+  const AuctionCounter = async () => {
+    try {
+
+      const contract = await auctionContract();
+      const transaction = await contract?.auctionCounter();
+      // await transaction.wait();
+      // console.log(transaction);
+      setAucitonCounter(Number(transaction).toString())
+
+    } catch (error) {
+      console.log(error)
+      toast.error("Transactin Failed! :(")
+    }
+  }
+  // Read function End
+
+
+
+  // handlers
   const handleMinBidChange = (e: any) => {
     setMinBid(e.target.value);
   };
@@ -42,6 +130,10 @@ const HeroSection = () => {
   const handleDescriptionChange = (e: any) => {
     setDescription(e.target.value);
   };
+
+  const placeBidAmountChange = (e: any) => {
+    setPlaceBidAmount(e.target.value)
+  }
 
 
   const checkIfWalletConnected = async () => {
@@ -106,29 +198,13 @@ const HeroSection = () => {
             WinBid
           </a>
           {/* <!-- logo - end --> */}
-
-          {/* <!-- nav - start --> */}
-          {/* <nav className="hidden gap-12 lg:flex">
-            <a href="#" className="text-lg font-semibold text-indigo-500">Home</a>
-            <a href="#" className="text-lg font-semibold text-gray-600 transition duration-100 hover:text-indigo-500 active:text-indigo-700">Features</a>
-            <a href="#" className="text-lg font-semibold text-gray-600 transition duration-100 hover:text-indigo-500 active:text-indigo-700">Pricing</a>
-            <a href="#" className="text-lg font-semibold text-gray-600 transition duration-100 hover:text-indigo-500 active:text-indigo-700">About</a>
-          </nav> */}
-          {/* <!-- nav - end --> */}
-
           {/* <!-- buttons - start --> */}
-          <button onClick={connectWallet} className="rounded-lg bg-gray-200 px-8 py-3 text-center text-sm font-semibold text-gray-500 outline-none ring-indigo-300 transition duration-100 hover:bg-gray-300 focus-visible:ring active:text-gray-700 md:text-base lg:inline-block">{address ? shortnetAddress(address) : "ConnectWallet"}</button>
-
-          {/* <button type="button" className="inline-flex items-center gap-2 rounded-lg bg-gray-200 px-2.5 py-2 text-sm font-semibold text-gray-500 ring-indigo-300 hover:bg-gray-300 focus-visible:ring active:text-gray-700 md:text-base lg:hidden">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" />
-            </svg>
-
-            Menu
-          </button> */}
+          <div className='flex gap-3'>
+            <button className="rounded-lg bg-gray-200 px-8 py-3 text-center text-sm font-semibold text-gray-500 outline-none ring-indigo-300 transition duration-100 hover:bg-gray-300 focus-visible:ring active:text-gray-700 md:text-base lg:inline-block">{address ? balance : "0"} MTK</button>
+            <button onClick={connectWallet} className="rounded-lg bg-gray-200 px-8 py-3 text-center text-sm font-semibold text-gray-500 outline-none ring-indigo-300 transition duration-100 hover:bg-gray-300 focus-visible:ring active:text-gray-700 md:text-base lg:inline-block">{address ? shortnetAddress(address) : "ConnectWallet"}</button>
+          </div>
           {/* <!-- buttons - end --> */}
         </header>
-
         <section className={`min-h-96 relative overflow-hidden rounded-lg bg-gray-100 py-16 shadow-lg md:py-20 xl:py-30 px-10 md:px-12   ${openBidSection ? "" : "min-h-96 relative flex flex-1 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gray-100 py-16 shadow-lg md:py-20 xl:py-48  "} `}>
           {/* <!-- image - start --> */}
           <img src="https://images.unsplash.com/photo-1618004652321-13a63e576b80?auto=format&q=75&fit=crop&w=1500" loading="lazy" alt="Photo by Fakurian Design" className="absolute inset-0 h-full w-full object-cover object-center" />
@@ -190,13 +266,35 @@ const HeroSection = () => {
                     <div>
                       <label htmlFor="text" className="mb-2 inline-block text-sm text-gray-800 sm:text-base">Bid Amount *</label>
                       <input
-                        name="email"
+                        name="text"
+                        value={placeBidAmount}
+                        onChange={placeBidAmountChange}
                         className="w-full rounded border border-gray-300 bg-gray-200 px-3 py-2 text-gray-800 outline-none ring-indigo-300 transition duration-100 focus:ring"
                       />
                     </div>
-                    <button className=" w-full mt-5 flex items-center justify-center gap-2 rounded-lg bg-blue-500 px-8 py-3 text-center text-sm font-semibold text-white outline-none ring-blue-300 transition duration-100 hover:bg-blue-600 focus-visible:ring active:bg-blue-700 md:text-base">
-                      Place Bid
-                    </button>
+                    {
+                      bidApproved ? (
+                        bloading ? (
+                          <div className=' w-full mt-5 flex items-center justify-center gap-2 rounded-lg bg-blue-500 px-8 py-4 pb-7 text-center text-sm font-semibold text-white outline-none ring-blue-300 transition duration-100 hover:bg-blue-600 focus-visible:ring active:bg-blue-700 md:text-base'>
+                            <PropagateLoader color='#ffffff' />
+                          </div>
+                        ) : (
+                          <button onClick={placeBid} className=" w-full mt-5 flex items-center justify-center gap-2 rounded-lg bg-blue-500 px-8 py-3 text-center text-sm font-semibold text-white outline-none ring-blue-300 transition duration-100 hover:bg-blue-600 focus-visible:ring active:bg-blue-700 md:text-base">
+                            Place Bid
+                          </button>
+                        )
+                      ) : (
+                        aloading ? (
+                          <div className=' w-full mt-5 flex items-center justify-center gap-2 rounded-lg bg-blue-500 px-8 py-4 pb-7 text-center text-sm font-semibold text-white outline-none ring-blue-300 transition duration-100 hover:bg-blue-600 focus-visible:ring active:bg-blue-700 md:text-base'>
+                            <PropagateLoader color='#ffffff' />
+                          </div>
+                        ) : (
+                          <button onClick={approveBid} className=" w-full mt-5 flex items-center justify-center gap-2 rounded-lg bg-blue-500 px-8 py-3 text-center text-sm font-semibold text-white outline-none ring-blue-300 transition duration-100 hover:bg-blue-600 focus-visible:ring active:bg-blue-700 md:text-base">
+                            Approve Bid 
+                          </button>
+                        )
+                      )
+                    }
 
                   </div>
                 </div>
