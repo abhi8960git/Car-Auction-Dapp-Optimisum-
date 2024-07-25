@@ -107,7 +107,7 @@ const DataTable = (props: Props) => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.map((data) => (
+          {data.map((data:any) => (
             <TableRow key={data[1]}>
               <TableCell >{data.carDetails}</TableCell>
               <TableCell >{Number(data.carId)}</TableCell>
