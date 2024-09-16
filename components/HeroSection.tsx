@@ -85,25 +85,25 @@ const HeroSection = () => {
   // write function end 
 
   // Read functions Start 
-  const getMTKBalance = async () => {
-    try {
-      if (!window.ethereum) return alert("No Account Found");
-      const accounts = await window.ethereum.request({
-        method: "eth_accounts",
-      })
 
-      const contract = await erc20Contract();
-      const transaction = await contract?.balanceOf(accounts[0]);
-      // await transaction.wait();
-      // console.log(transaction);
-      setBalance(Number(transaction).toString())
-
-    } catch (error) {
-      console.log(error)
-      toast.error("Transactin Failed! :(")
-    }
+const getMTKBalance = async () => {
+  try {
+    if (!window.ethereum) return alert("No Account Found");
+    const accounts = await window.ethereum.request({
+      method: "eth_accounts",
+    });
+    const contract = await erc20Contract();
+    const weiBalance = await contract?.balanceOf(accounts[0]);
+    
+    // Convert wei to ether
+    const etherBalance = ethers.utils.formatEther(weiBalance);
+    
+    setBalance(etherBalance);
+  } catch (error) {
+    console.log(error);
+    toast.error("Transaction Failed! :(");
   }
-
+};
   const AuctionCounter = async () => {
     try {
 
